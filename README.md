@@ -29,3 +29,10 @@ encfs password.
 
 For now, this script will always unmount your encfs when it finishes,
 so every time you use it, it will prompt for a password.
+
+This is an example of how I am using it
+
+    git remote add encfs \
+        encfs::$HOME/Dropbox/.secret-repos/git-remote-encfs
+    git push encfs master
+
