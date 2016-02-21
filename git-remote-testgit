@@ -1,6 +1,10 @@
 #!/bin/sh
 # Copyright (c) 2012 Felipe Contreras
 
+debug() {
+  echo "debug: " "$@" >&2
+}
+
 # The first argument can be a url when the fetch/push command was a url
 # instead of a configured remote. In this case, use a generic alias.
 if test "$1" = "testgit::$2"; then
@@ -9,6 +13,18 @@ else
 	alias=$1
 fi
 url=$2
+
+_private=$url-private
+mkdir -p $_private
+mkdir -p $url
+echo | encfs $_private $url >&2
+# need to wait for this to mount before the following and
+#continue
+while ! mount | grep $url; do
+  echo waiting to mount encfs... >&2
+  sleep 1
+done
+test -d "$url/.git" || git init "$url" >&2
 
 dir="$GIT_DIR/testgit/$alias"
 prefix="refs/testgit/$alias"
@@ -76,6 +92,7 @@ do
 		if test -n "$GIT_REMOTE_TESTGIT_FAILURE"
 		then
 			echo "feature done"
+			umount "$url"
 			exit 1
 		fi
 
@@ -97,6 +114,7 @@ do
 			while read line; do
 				test "done" = "$line" && break
 			done
+			umount "$url"
 			exit 1
 		fi
 
@@ -141,7 +159,10 @@ do
 		esac
 		;;
 	'')
+		umount "$url"
 		exit
 		;;
 	esac
 done
+
+umount "$url"
