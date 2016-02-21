@@ -7,7 +7,7 @@ debug() {
 
 # The first argument can be a url when the fetch/push command was a url
 # instead of a configured remote. In this case, use a generic alias.
-if test "$1" = "testgit::$2"; then
+if test "$1" = "encfs::$2"; then
 	alias=_
 else
 	alias=$1
@@ -26,12 +26,12 @@ while ! mount | grep $url; do
 done
 test -d "$url/.git" || git init "$url" >&2
 
-dir="$GIT_DIR/testgit/$alias"
-prefix="refs/testgit/$alias"
+dir="$GIT_DIR/encfs/$alias"
+prefix="refs/encfs/$alias"
 
 default_refspec="refs/heads/*:${prefix}/heads/*"
 
-refspec="${GIT_REMOTE_TESTGIT_REFSPEC-$default_refspec}"
+refspec="${GIT_REMOTE_ENCFS_REFSPEC-$default_refspec}"
 
 test -z "$refspec" && prefix="refs"
 
@@ -42,12 +42,12 @@ force=
 
 mkdir -p "$dir"
 
-if test -z "$GIT_REMOTE_TESTGIT_NO_MARKS"
+if test -z "$GIT_REMOTE_ENCFS_NO_MARKS"
 then
 	gitmarks="$dir/git.marks"
-	testgitmarks="$dir/testgit.marks"
+	encfsmarks="$dir/encfs.marks"
 	test -e "$gitmarks" || >"$gitmarks"
-	test -e "$testgitmarks" || >"$testgitmarks"
+	test -e "$encfsmarks" || >"$encfsmarks"
 fi
 
 while read line
@@ -62,8 +62,8 @@ do
 			echo "*import-marks $gitmarks"
 			echo "*export-marks $gitmarks"
 		fi
-		test -n "$GIT_REMOTE_TESTGIT_SIGNED_TAGS" && echo "signed-tags"
-		test -n "$GIT_REMOTE_TESTGIT_NO_PRIVATE_UPDATE" && echo "no-private-update"
+		test -n "$GIT_REMOTE_ENCFS_SIGNED_TAGS" && echo "signed-tags"
+		test -n "$GIT_REMOTE_ENCFS_NO_PRIVATE_UPDATE" && echo "no-private-update"
 		echo 'option'
 		echo
 		;;
@@ -89,7 +89,7 @@ do
 			echo "feature export-marks=$gitmarks"
 		fi
 
-		if test -n "$GIT_REMOTE_TESTGIT_FAILURE"
+		if test -n "$GIT_REMOTE_ENCFS_FAILURE"
 		then
 			echo "feature done"
 			umount "$url"
@@ -98,14 +98,14 @@ do
 
 		echo "feature done"
 		git fast-export \
-			${testgitmarks:+"--import-marks=$testgitmarks"} \
-			${testgitmarks:+"--export-marks=$testgitmarks"} \
+			${encfsmarks:+"--import-marks=$encfsmarks"} \
+			${encfsmarks:+"--export-marks=$encfsmarks"} \
 			$refs |
 		sed -e "s#refs/heads/#${prefix}/heads/#g"
 		echo "done"
 		;;
 	export)
-		if test -n "$GIT_REMOTE_TESTGIT_FAILURE"
+		if test -n "$GIT_REMOTE_ENCFS_FAILURE"
 		then
 			# consume input so fast-export doesn't get SIGPIPE;
 			# git would also notice that case, but we want
@@ -122,8 +122,8 @@ do
 
 		git fast-import \
 			${force:+--force} \
-			${testgitmarks:+"--import-marks=$testgitmarks"} \
-			${testgitmarks:+"--export-marks=$testgitmarks"} \
+			${encfsmarks:+"--import-marks=$encfsmarks"} \
+			${encfsmarks:+"--export-marks=$encfsmarks"} \
 			--quiet
 
 		# figure out which refs were updated
@@ -134,11 +134,11 @@ do
 			*" $ref $a "*)
 				continue ;;	# unchanged
 			esac
-			if test -z "$GIT_REMOTE_TESTGIT_PUSH_ERROR"
+			if test -z "$GIT_REMOTE_ENCFS_PUSH_ERROR"
 			then
 				echo "ok $ref"
 			else
-				echo "error $ref $GIT_REMOTE_TESTGIT_PUSH_ERROR"
+				echo "error $ref $GIT_REMOTE_ENCFS_PUSH_ERROR"
 			fi
 		done
 
